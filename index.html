@@ -1,121 +1,87 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAIO FOOD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAIO FOOD - Fast Food Real por Bairro</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,system-ui}
-body{background:#1c1440}
-header{background:linear-gradient(90deg,#ff3a8a,#8a2be2);padding:14px 16px;display:flex;align-items:center;gap:12px}
-.logo{width:46px;height:46px;background:#fff;border-radius:50%;display:grid;place-items:center;font-size:24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-header b{font-size:15px;line-height:1.1;color:#fff;display:block}
-header span{font-size:11px;color:#fff;opacity:.95;letter-spacing:.5px}
-.main{padding:16px}
-.box{background:#241a4d;border-radius:20px;padding:16px}
-.input{width:100%;background:#0e0a24;color:#fff;border:1px solid #2a234d;padding:18px 16px;border-radius:14px;font-size:15px;margin-bottom:12px;outline:none;appearance:none}
-.btn{width:100%;border:0;border-radius:14px;padding:18px 12px;font-weight:900;font-size:14px;margin-bottom:12px;cursor:pointer;text-transform:uppercase}
-.btn-green{background:#00e676;color:#fff}
-.btn-pink{background:linear-gradient(90deg,#ff3a8a,#8a2be2);color:#fff}
-#mapWrap{padding:0 16px 16px}
-#map{height:460px;width:100%;border-radius:18px;background:#fff}
-#status{margin:0 16px 10px;background:#fff3cd;color:#111;padding:10px;border-radius:10px;text-align:center;font-weight:800;font-size:12px;display:none}
-.list{padding:0 16px 20px;display:grid;gap:10px}
-.card{background:#fff;color:#111;border-radius:14px;padding:12px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#1c1440;color:#fff}
+header{background:#0f0a2a;padding:15px;text-align:center;position:sticky;top:0;z-index:10}
+header h1{color:#ffcc00;font-size:28px} header p{font-size:13px;opacity:.8}
+.search{padding:15px;background:#251c5a;display:flex;gap:10px}
+.search input{flex:1;padding:12px;border-radius:10px;border:none;outline:none}
+.search button{padding:12px 15px;border:none;border-radius:10px;background:#ffcc00;font-weight:bold}
+#map{height:350px;width:100%}
+.lista{padding:15px;display:grid;gap:15px}
+.card{background:#2a2165;border-radius:15px;padding:15px;display:flex;flex-direction:column;gap:8px}
+.card h3{color:#ffcc00} .card .bairro{font-size:12px;opacity:.7}
+.btns{display:flex;gap:10px;margin-top:5px}
+.btn{flex:1;padding:10px;border-radius:8px;text-align:center;text-decoration:none;font-weight:bold;font-size:13px}
+.wpp{background:#25D366;color:#fff} .insta{background:#E1306C;color:#fff}
+footer{text-align:center;padding:20px;opacity:.5;font-size:11px}
 </style>
 </head>
 <body>
-<header><div class="logo">⚡</div><div><b>RAIO FOOD</b><span>FAST DELIVERY</span></div></header>
+<header>
+<h1>⚡ RAIO FOOD</h1>
+<p>Fast-food REAL por bairro - Taboão da Serra e região</p>
+</header>
 
-<div class="main">
-<div class="box">
-<select id="estado" class="input">
-<option>SP - São Paulo</option>
-<option>RJ - Rio de Janeiro</option>
-<option>MG - Minas Gerais</option>
-<option>BA - Bahia</option>
-<option>PE - Pernambuco</option>
-<option>CE - Ceará</option>
-<option>PR - Paraná</option>
-<option>RS - Rio Grande do Sul</option>
-<option>SC - Santa Catarina</option>
-<option>GO - Goiás</option>
-<option>DF - Distrito Federal</option>
-<option>Todo Brasil</option>
-</select>
-
-<input id="cidade" class="input" value="Taboão da Serra - Pirajuçara" placeholder="Taboão da Serra - Pirajuçara">
-
-<button class="btn btn-green" onclick="usarGPS()">📍 USAR MINHA LOCALIZAÇÃO (abrir no Chrome)</button>
-<button class="btn btn-pink" onclick="buscar()">🔍 EMPRESAS JÁ CARREGADAS ABAIXO ↓</button>
-</div>
+<div class="search">
+<input id="busca" placeholder="Digite seu bairro: Ex: Pq. São Joaquim, Jd. Salete...">
+<button onclick="filtrar()">Buscar</button>
 </div>
 
-<div id="status"></div>
-<div id="mapWrap"><div id="map"></div></div>
-<div id="lista" class="list"></div>
+<div id="map"></div>
 
+<div class="lista" id="lista"></div>
+
+<footer>Desenvolvido por Maicom Fonseca - Taboão da Serra - SP</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-var map = L.map('map',{zoomControl:true}).setView([-23.619,-46.779],14);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-var marks=[];
+const empresas = [
+{nome:"Hamburgueria do Pq. São Joaquim", bairro:"Pq. São Joaquim", lat:-23.628, lng:-46.787, whats:"5511999999999", insta:"hamburgueriateste"},
+{nome:"Pastelaria Taboão Centro", bairro:"Centro", lat:-23.619, lng:-46.779, whats:"5511999999999", insta:"pasteis"},
+{nome:"Lanches Jd. Salete", bairro:"Jd. Salete", lat:-23.635, lng:-46.791, whats:"5511999999999", insta:"lanches"},
+];
 
-function showStatus(t){var s=document.getElementById('status');s.style.display='block';s.innerHTML=t;}
+let map = L.map('map').setView([-23.625,-46.785],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+let marcadores=[];
 
-function limpar(){marks.forEach(m=>map.removeLayer(m));marks=[];document.getElementById('lista').innerHTML='';}
-
-async function buscar(){
-var cidadeFull = document.getElementById('cidade').value;
-var estado = document.getElementById('estado').value;
-if(!cidadeFull){alert('Digite a cidade - bairro');return;}
-var q = cidadeFull + ", " + estado + ", Brasil";
-showStatus("🔍 Buscando restaurantes REAIS em: "+q+"...");
-
-var geo = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q)).then(r=>r.json());
-if(!geo.length){showStatus("❌ Não achei "+q+" - tente outra cidade");return;}
-
-var lat=geo[0].lat, lon=geo[0].lon;
-map.setView([lat,lon],15);
-
-var over = `[out:json][timeout:25];node["amenity"~"restaurant|fast_food|cafe|bar|bakery"](around:3000,${lat},${lon});out 50;`;
-var data = await fetch("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(over)).then(r=>r.json());
-
-limpar();
-if(!data.elements ||!data.elements.length){showStatus("Nenhum restaurante em "+q);return;}
-
-showStatus("⚡ "+data.elements.length+" empresas REAIS carregadas em "+q+" - abaixo ↓");
-
-data.elements.forEach(function(el){
-if(!el.lat) return;
-var nome = el.tags.name || "Restaurante Local";
-var tipo = el.tags.amenity || "restaurante";
-var m = L.marker([el.lat,el.lon]).addTo(map).bindPopup("<b>"+nome+"</b><br>"+tipo);
-marks.push(m);
-var link = "https://www.google.com/maps/search/"+encodeURIComponent(nome)+"/@"+el.lat+","+el.lon+",17z";
-var html = '<div class="card"><b>'+nome+'</b> <small>• '+tipo+'</small><br><a href="'+link+'" target="_blank" style="font-size:12px;color:#7b2cff;font-weight:800;text-decoration:none">Ver no mapa →</a> | <a href="https://wa.me/?text=Olá '+encodeURIComponent(nome)+'" target="_blank" style="font-size:12px;color:#00c853;font-weight:800;text-decoration:none">WhatsApp</a></div>';
-document.getElementById('lista').innerHTML+=html;
+function mostrar(lista){
+document.getElementById('lista').innerHTML='';
+marcadores.forEach(m=>map.removeLayer(m)); marcadores=[];
+lista.forEach(e=>{
+let m=L.marker([e.lat,e.lng]).addTo(map).bindPopup(`<b>${e.nome}</b><br>${e.bairro}`);
+marcadores.push(m);
+document.getElementById('lista').innerHTML+=`
+<div class="card">
+<h3>${e.nome}</h3>
+<span class="bairro">📍 ${e.bairro}</span>
+<div class="btns">
+<a class="btn wpp" href="https://wa.me/${e.whats}?text=Oi! Vi vocês no RAIO FOOD" target="_blank">WhatsApp</a>
+<a class="btn insta" href="https://instagram.com/${e.insta}" target="_blank">Instagram</a>
+</div>
+</div>`;
 });
 }
 
-function usarGPS(){
-if(!navigator.geolocation){alert("Abra no Chrome para usar GPS");return;}
-navigator.geolocation.getCurrentPosition(async function(p){
-var lat=p.coords.latitude, lon=p.coords.longitude;
-map.setView([lat,lon],15);
-var m = L.marker([lat,lon]).addTo(map).bindPopup("VOCÊ ESTÁ AQUI").openPopup(); marks.push(m);
-showStatus("📍 Buscando perto de você...");
-var over=`[out:json];node["amenity"~"restaurant|fast_food|cafe|bar"](around:2500,${lat},${lon});out 50;`;
-var data=await fetch("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(over)).then(r=>r.json());
-limpar();
-showStatus("⚡ "+(data.elements?data.elements.length:0)+" empresas perto de você");
-(data.elements||[]).forEach(function(el){
-if(!el.lat) return;
-L.marker([el.lat,el.lon]).addTo(map);
-var nome=el.tags.name||"Restaurante";
-document.getElementById('lista').innerHTML+='<div class="card"><b>'+nome+'</b> <small>• perto</small></div>';
-});
+function filtrar(){
+let termo=document.getElementById('busca').value.toLowerCase();
+if(!termo){mostrar(empresas);return;}
+let f=empresas.filter(e=>e.bairro.toLowerCase().includes(termo) || e.nome.toLowerCase().includes(termo));
+mostrar(f);
+}
+
+mostrar(empresas);
+if(navigator.geolocation){
+navigator.geolocation.getCurrentPosition(p=>{
+let lat=p.coords.latitude, lng=p.coords.longitude;
+L.marker([lat,lng],{icon:L.icon({iconUrl:'https://cdn-icons-png.flaticon.com/512/64/64113.png',iconSize:[20,20]})}).addTo(map).bindPopup("Você está aqui");
 });
 }
 </script>
